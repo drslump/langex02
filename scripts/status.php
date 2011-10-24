@@ -51,11 +51,13 @@ if (!is_dir($PATH)) {
 // Store the message as a new file
 file_put_contents($PATH . '/' . $ID, json_encode($data));
 
+
 // Notify task manager
 $task = array(
     'action' => 'status',
     'user'   => $USER,
     'id'     => $ID
 );
-file_put_contents($CFG->paths->tasks . '/' . $ID, json_encode($data));
+
+file_put_contents($CONF->paths->tasks . '/' . $ID, json_encode($data));
 

@@ -58,3 +58,12 @@ if (!is_dir($PATH)) {
 // Store the message as a new file
 file_put_contents($PATH . '/profile.json', json_encode($data));
 
+
+// Notify task manager
+$task = array(
+    'action' => 'profile',
+    'user'   => $USER,
+);
+
+file_put_contents($CONF->paths->tasks . '/profile-' . $USER, json_encode($data));
+
