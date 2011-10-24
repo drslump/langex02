@@ -5,6 +5,7 @@
 //     - email:string   -> The user email
 //     - avatar:string  -> The user avatar as an url
 //     - site:string    -> The user web site
+//     - friends:string -> Comma separated list of friend usernames
 //
 
 $CONF = file_get_contents( __DIR__ . '/../conf/config.json');
@@ -28,6 +29,11 @@ if (file_exists($PATH . '/profile.json')) {
 isset($_POST['email']) and $data['email'] = $_POST['email'];
 isset($_POST['avatar']) and $data['avatar'] = $_POST['avatar'];
 isset($_POST['site']) and $data['site'] = $_POST['site'];
+if (isset($_POST['friends'])) {
+    $friends = explode(',', $_POST['friends']);
+    array_walk($friends, function($itm){ return trim($itm); });
+    $data['friends'] = $friends;
+}
 
 // If the user does not have a random token for secure access generate it now
 if (empty($data['token'])) {
