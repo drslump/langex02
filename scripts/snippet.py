@@ -27,6 +27,7 @@ configFile= open( '../conf/config.json', 'rb')
 configuration= json.load( configFile)
 #print configuration
 dataPath= configuration[ "paths"]["data"]
+tasksPath= configuration[ "paths"]["tasks"]
 #print configuration[ "paths"]["data"]
 
 env = os.environ
@@ -67,10 +68,16 @@ snippet[ "code"]= form["code"].value
 #print "<p>code:", snippet[ "code"]
 
 #print "<br/>json dump", json.dumps( snippet)
-snippetUUID= str(uuid.uuid1())
-filename= os.path.join( dataPath, "".join( (dt, snippetUUID, ".json")))
+snippetUUID= "".join( (dt, str( uuid.uuid1()), ".json"))
+filename= os.path.join( dataPath, snippetUUID)
 #print "filename=", filename
 
 output= open( filename, "wb")
 output.write( json.dumps( snippet))
+output.close()
+
+filename= os.path.join( tasksPath, snippetUUID)
+output= open( filename, "wb")
+task= { "action": "snippet", "user": user, "id": snippetUUID }
+output.write( json.dumps( task))
 output.close()
