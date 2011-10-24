@@ -25,6 +25,15 @@ if (file_exists($PATH . '/profile.json')) {
     $data = array();
 }
 
+
+// If we only want to fetch it return it
+if (empty($_POST)) {
+    header('Content-type: application/json');
+    echo json_encode($data);
+    exit;
+}
+
+
 // Set new values
 isset($_POST['email']) and $data['email'] = $_POST['email'];
 isset($_POST['avatar']) and $data['avatar'] = $_POST['avatar'];
