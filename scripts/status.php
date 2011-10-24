@@ -59,5 +59,5 @@ $task = array(
     'id'     => $ID
 );
 
-file_put_contents($CONF->paths->tasks . '/' . $ID, json_encode($task));
+file_put_contents($CONF->paths->tasks . '/' . $ID . '.json', json_encode($task));
 
