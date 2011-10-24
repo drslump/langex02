@@ -3,19 +3,98 @@
 <head>
   <title>LangExp02</title>
 
+  <meta name="viewport" content="width=device-width, initial-scale=1"> 
+
+  <link rel="stylesheet" href="http://code.jquery.com/mobile/1.0rc2/jquery.mobile-1.0rc2.min.css" />
+  <script type="text/javascript" src="http://code.jquery.com/jquery-1.6.4.min.js"></script>
+
+
   <link type="text/css" rel="stylesheet" src="/main.css" />
 
-  <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
- 
   <script type="text/javascript">
-    $(document).ready(function() {
+    $(document).bind('mobileinit', function(){
 
+        // Handle status submit
+        $("#form-status").live('submit', function(event){ 
+
+            // stop form from submitting normally 
+            event.preventDefault(); 
+
+            var $form = $(this),
+                status = $form.find( '*[name="status"]' ).val(),
+                url = $form.attr( 'action' );
+
+            // Send the data using post and put the results in a div
+            $.post(url, { status: status }, function(data){
+                $("#status").dialog('close');
+                loadWall();
+            });
+        });
+
+
+
+        // Load global wall
+        function loadWall(){
+            $.getJSON('/wall.json', function(data){
+                for (var i=0; i<data.length; i++) {
+                    $('#list').append(
+                        '<li>' + 
+                            '<img src="http://www.gravatar.com/avatar/' + data[i].gravatar + '" />' +
+                            data[i].status + 
+                            '<em>by ' + data[i].user + '</em>' + 
+                        '</li>');
+                }
+
+                // Update list view
+                $('#list').listview('refresh');
+            });
+        }
+
+
+        loadWall();
     });
   </script>
+
+  <script type="text/javascript" src="http://code.jquery.com/mobile/1.0rc2/jquery.mobile-1.0rc2.min.js"></script>
+
 </head>
 <body>
-  <h1>LangExp02 - Old Skool</h1>
-  
+  <div data-role="page" id="home">
 
+    <div data-role="header">
+      <h1>LangEx#02 - Old Skool</h1>
+    </div>
+
+    <div data-role="content">
+
+        <a href="#status" data-role="button" data-rel="dialog">New Message</a> 
+
+        <ul data-role="listview" data-theme="g" id="list">
+        </ul>
+
+    </div>
+
+    <div data-role="footer">
+      <h4>&copy 2011 Miceno & DrSlump</h4>
+    </div>
+  </div>
+
+
+  <div data-role="page" id="status">
+
+    <div data-role="header">
+      <h1>Post a new status!</h1>
+    </div>
+
+    <div data-role="content">
+        <form id="form-status" action="/cgi-bin/status.php" method="post" data-ajax="false">
+            <textarea name="status" id="field-status"></textarea>
+            <input type="submit" id="myform_submit" value="Submit">
+        </form> 
+    </div>
+
+    <div data-role="footer">
+    </div>
+  </div>
 </body>
 </html>
