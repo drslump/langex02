@@ -5,6 +5,7 @@
 #   - Input (POST)
 #     - code:string    -> The code of the snippet
 #     - language:string   -> If set this must be the language of the snippet
+#     - tags:string   -> If set this must be a comma-separated list of tags
 #        
 #   Create a file at $data/:user/snippet
 
@@ -16,12 +17,16 @@ import os
 import sys
 import uuid
 
+headers=[]
+
+def print_headers():
+    print "\n".join( [ h for h in headers ] )
+    print
 
 cgitb.enable()
 
+headers.append( "Content-Type: text/html")
 # Read the configuration file
-print "Content-Type: text/html"     # HTML is following
-print                               # blank line, end of headers
 
 configFile= open( '../conf/config.json', 'rb')
 configuration= json.load( configFile)
@@ -34,6 +39,11 @@ env = os.environ
 #print "ENV=",env
 #"<br/>".join( [ "%s=%s" % k,v for (k,v) in os.environ] )
 if "REMOTE_USER" not in env:
+    headers.append('WWW-Authenticate: Basic realm="Langex"');
+    headers.append('Status: 401 Unauthorized');
+    headers.append('HTTP/1.0 401 Unauthorized');
+
+    print_headers( )
     print "<H1>Error</H1>"
     print "Missing REMOTE_USER"
     sys.exit()
@@ -55,15 +65,22 @@ dt= datetime.datetime.utcnow().strftime( "%Y%m%d%H%M-")
 
 form = cgi.FieldStorage()
 
-if "code" not in form or "language" not in form:
+if "code" not in form:
+#if "code" not in form or "language" not in form:
+    headers.append('Status: 400');
+    print_headers()
     print "<H1>Error</H1>"
-    print "Please fill in the code and language fields."
+    print "Please fill in the code fields."
     sys.exit()
 
-snippet={ }
-#snippet={ "language": "", "code": ""}
-snippet[ "language"]= form["language"].value
+snippet={ "language": "", "code": "", "tags": ""}
 snippet[ "code"]= form["code"].value
+
+if "tags" in form:
+    snippet[ "tags"]= form["tags"].value
+if "language" in form:
+    snippet[ "language"]= form["language"].value
+
 #print "<p>language:", snippet[ "language"]
 #print "<p>code:", snippet[ "code"]
 
