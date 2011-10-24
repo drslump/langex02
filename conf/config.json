@@ -1,6 +1,7 @@
 {
   "paths": {
     "base": "/var/www/langex",
-    "data": "/var/www/langex/data"
+    "data": "/var/www/langex/data",
+    "tasks": "/var/www/langex/tasks"
   }
 }
