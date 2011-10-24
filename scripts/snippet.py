@@ -73,7 +73,8 @@ if "code" not in form:
     print "Please fill in the code fields."
     sys.exit()
 
-snippet={ "language": "", "code": "", "tags": ""}
+snippet={ "language": "", "author": "", "code": "", "tags": ""}
+snippet[ "author"]= user
 snippet[ "code"]= form["code"].value
 
 if "tags" in form:
