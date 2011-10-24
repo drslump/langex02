@@ -1,3 +1,6 @@
 {
-  "path": "/var/www/langex"
+  "paths": {
+    "base": "/var/www/langex",
+    "data": "/var/www/langex/data"
+  }
 }
