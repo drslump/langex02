@@ -65,5 +65,5 @@ $task = array(
     'user'   => $USER,
 );
 
-file_put_contents($CONF->paths->tasks . '/profile-' . $USER, json_encode($task));
+file_put_contents($CONF->paths->tasks . '/profile-' . $USER . '.json', json_encode($task));
 
