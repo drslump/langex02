@@ -99,3 +99,6 @@ output= open( filename, "wb")
 task= { "action": "snippet", "user": user, "id": snippetUUID }
 output.write( json.dumps( task))
 output.close()
+
+print_headers()
+print "OK"
