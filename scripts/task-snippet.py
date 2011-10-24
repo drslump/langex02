@@ -84,7 +84,7 @@ if not "tags" in snippet:
 
 profileFilename= os.path.join( dataPath, task["user"], "profile.json")
 profile= json.load( open( profileFilename, "rb"))
-tags= snippet[ "tags"].split(',')
+tags= snippet[ "tags"]
 
 # Update all tags
 for t in tags:
