@@ -94,6 +94,7 @@ output= open( filename, "wb")
 output.write( json.dumps( snippet))
 output.close()
 
+# Create a task
 filename= os.path.join( tasksPath, snippetUUID)
 output= open( filename, "wb")
 task= { "action": "snippet", "user": user, "id": snippetUUID }
