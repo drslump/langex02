@@ -40,7 +40,7 @@ if (!empty($_POST['to'])) {
 
 
 // Generate the Path and Id for the message
-$ID = uniqid(date('YmdHi-'));
+$ID = uniqid(gmdate('YmdHi-'));
 $PATH = $CONF->paths->data . '/' . $USER . '/wall';
 
 // TODO: Improve permission flag
