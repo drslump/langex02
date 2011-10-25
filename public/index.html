@@ -3,98 +3,181 @@
 <head>
   <title>LangExp02</title>
 
-  <meta name="viewport" content="width=device-width, initial-scale=1"> 
-
-  <link rel="stylesheet" href="http://code.jquery.com/mobile/1.0rc2/jquery.mobile-1.0rc2.min.css" />
   <script type="text/javascript" src="http://code.jquery.com/jquery-1.6.4.min.js"></script>
 
+  <script src="http://terminal.jcubic.pl/js/jquery.terminal-0.4.3.min.js"></script>
+  <link type="text/css" rel="stylesheet" href="http://terminal.jcubic.pl/css/jquery.terminal.css" />
 
-  <link type="text/css" rel="stylesheet" src="/main.css" />
+  <link type="text/css" rel="stylesheet" href="/main.css" />
 
   <script type="text/javascript">
-    $(document).bind('mobileinit', function(){
+    $(document).ready(function($) {
 
-        // Handle status submit
-        $("#form-status").live('submit', function(event){ 
-
-            // stop form from submitting normally 
-            event.preventDefault(); 
-
-            var $form = $(this),
-                status = $form.find( '*[name="status"]' ).val(),
-                url = $form.attr( 'action' );
-
-            // Send the data using post and put the results in a div
-            $.post(url, { status: status }, function(data){
-                $("#status").dialog('close');
-                loadWall();
-            });
-        });
+        var cwd = '/',
+            profile = null,
+            cachedData = [];
 
 
-
-        // Load global wall
-        function loadWall(){
-            $.getJSON('/wall.json', function(data){
-                for (var i=0; i<data.length; i++) {
-                    $('#list').append(
-                        '<li>' + 
-                            '<img src="http://www.gravatar.com/avatar/' + data[i].gravatar + '" />' +
-                            data[i].status + 
-                            '<em>by ' + data[i].user + '</em>' + 
-                        '</li>');
+        $('#term').terminal({
+            help: function(){
+                this.echo('LangEx#02 terminal help');
+                this.echo('-------------------------------------------');
+                this.echo('  ls  - List current directory');
+                this.echo('  cd [[i;;]directory] - Change directory');
+                this.echo('  cat [[i;;]entry] - Show the contents of the given entry');
+                this.echo('  follow [[i;;]username]   - Follow the given username');
+                this.echo('  unfollow [[i;;]username] - Unfollow the given username');
+            },
+            ls: function(){
+                var me = this;
+                switch (cwd) {
+                case '/snippets':
+                    this.pause();
+                    $.ajax('/snippets.json', {
+                        dataType: 'json',
+                        success: function(data){
+                            cachedData = data;
+                            data.forEach(function(itm){
+                                var d = new Date((itm.timestamp || 0) * 1000);
+                                var out = [];
+                                out.push('[[u;;]' + itm.user + ']');
+                                out.push(d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate() + ' ' + d.getHours() + ':' + d.getMinutes());
+                                out.push(itm.title);
+                                me.echo(out.join(' '));
+                            });
+                            me.resume();
+                        }
+                    });
+                break;
+                case '/':
+                default:
+                    this.echo('tags');
+                    this.echo('snippets');
+                    this.echo('messages');
+                    this.echo('home');
+                }
+            },
+            cd: function(dir){
+                if (-1 === ['..','tags','snippets','messages','home'].indexOf(dir)) {
+                    this.error('Invalid directory');
+                    return;
                 }
 
-                // Update list view
-                $('#list').listview('refresh');
-            });
-        }
+                if (dir === '..') {
+                    cwd = '/';
+                } else {
+                    cwd = '/' + dir;
+                }
 
+                this.set_prompt( cwd + ' >' );
+            },
 
-        loadWall();
+            cat: function(/*entry*/){
+                var entry = [], me = this;
+
+                for (var i=0; i<arguments.length; i++){
+                    entry.push(arguments[i]);
+                }
+                entry = entry.join(' ');
+
+                switch (cwd) {
+                case '/snippets':
+                    var found = false;
+                    cachedData.forEach(function(itm){
+                        if (itm.title === entry) {
+                            me.echo(itm.code);
+                            found = true;
+                        }
+                    });
+                    if (!found) {
+                        me.error('Snippet not found');
+                    }
+                break;
+                }
+            },
+
+            follow: function(username){
+                var me = this;
+
+                if (-1 !== profile.friends.indexOf(username)) {
+                    this.error(' You are already friends with ' + username + '!');
+                    return;
+                }
+
+                // Add friend
+                profile.friends.push(username);
+
+                this.pause();
+
+                $.post('/cgi-bin/profile.php', {
+                    friends: profile.friends.join(',')
+                }, function(){
+                    me.resume();
+                });
+            },
+
+            unfollow: function(username){
+                var me = this;
+
+                // Find friend and remove it
+                var idx = profile.friends.indexOf(username);
+                if (-1 === idx) {
+                    this.error('This is not your friend!');
+                    return;
+                }
+
+                profile.friends.splice(idx, 1);
+
+                this.pause();
+
+                $.post('/cgi-bin/profile.php', {
+                    friends: profile.friends.join(',')
+                }, function(){
+                    me.resume();
+                });
+            },
+            logout: function(){
+                this.logout();
+            }
+        }, {
+            tabcompletion: true,
+            prompt: '/ >',
+            name: 'langex',
+            greetings: "Welcome to LangEx#02!",
+            login: function(username, password, cb){
+                $.ajax('/profile.json', {
+                    dataType: 'json',
+                    username: username,
+                    password: password,
+                    success: function(data){
+                        // Store the user profile
+                        profile = data;
+                        cb(username);
+                    },
+                    failure: function(data){
+                        cb(false);
+                    }
+                });
+            },
+            onInit: function(term){
+                if (!profile) {
+                    term.pause();
+                    $.ajax('/profile.json', {
+                        dataType: 'json',
+                        success: function(data){
+                            profile = data;
+                            term.resume();
+                        }
+                    });
+                }
+            }
+        });
     });
   </script>
 
-  <script type="text/javascript" src="http://code.jquery.com/mobile/1.0rc2/jquery.mobile-1.0rc2.min.js"></script>
-
 </head>
 <body>
-  <div data-role="page" id="home">
-
-    <div data-role="header">
-      <h1>LangEx#02 - Old Skool</h1>
-    </div>
-
-    <div data-role="content">
-
-        <a href="#status" data-role="button" data-rel="dialog">New Message</a> 
-
-        <ul data-role="listview" data-theme="g" id="list">
-        </ul>
-
-    </div>
-
-    <div data-role="footer">
-      <h4>&copy 2011 Miceno & DrSlump</h4>
-    </div>
-  </div>
-
-
-  <div data-role="page" id="status">
-
-    <div data-role="header">
-      <h1>Post a new status!</h1>
-    </div>
-
-    <div data-role="content">
-        <form id="form-status" action="/cgi-bin/status.php" method="post" data-ajax="false">
-            <textarea name="status" id="field-status"></textarea>
-            <input type="submit" id="myform_submit" value="Submit">
-        </form> 
-    </div>
-
-    <div data-role="footer">
-    </div>
+  <div id="term">
   </div>
 </body>
 </html>
