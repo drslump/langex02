@@ -273,6 +273,7 @@
                     success: function(data){
                         // Store the user profile
                         profile = data;
+                        profile.friends = profile.friends || [];
                         cb(username);
                     },
                     failure: function(data){
@@ -287,6 +288,7 @@
                         dataType: 'json',
                         success: function(data){
                             profile = data;
+                            profile.friends = profile.friends || [];
                             term.resume();
                         }
                     });
