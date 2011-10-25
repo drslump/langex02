@@ -11,6 +11,7 @@
 #   Create a file at $data/:user/snippet
 
 import json
+import syslog
 import datetime
 import time
 import cgitb
@@ -81,8 +82,11 @@ snippet[ "title"]= form["title"].value
 snippet[ "code"]= form["code"].value
 snippet[ "timestamp"]= int( time.mktime( datetime.datetime.utcnow().timetuple()))
 
+syslog.syslog( syslog.LOG_INFO, "new snippet %d" % snippet[ "timestamp"] )
+
 if "tags" in form:
-    snippet[ "tags"]= form["tags"].value.split( ",")
+    snippet[ "tags"]= [ t.strip() for t in form["tags"].value.split( ",") ]
+    #snippet[ "tags"]= form["tags"].value.split( ",")
 if "language" in form:
     snippet[ "language"]= form["language"].value
 
@@ -104,17 +108,20 @@ output= open( filename, "wb")
 task= { "action": "snippet", "user": user, "id": snippetUUID }
 output.write( json.dumps( task))
 output.close()
+syslog.syslog( syslog.LOG_INFO, "writing task %s" % filename  )
 
 # Create a task to notify friends
 profileFilename= os.path.join( dataPath, user, "profile.json")
-profile= json.load( open( profileFilename, "rb"))
+profileFile=  open( profileFilename, "rb")
+profile= json.load( profileFile)
+profileFile.close()
 
 filename= os.path.join( tasksPath, "-".join( ('notify',snippetUUID)))
 output= open( filename, "wb")
 task= { "action": "notify", "user": user, "id": snippetUUID }
 
 if "friends" in profile:
-# in case the user has friends notify them
+   # in case the user has friends notify them
    task["friends"]= profile["friends"]
    task["message"]= { \
        'subject': '%s has uploaded a new snippet' % user, \
@@ -134,6 +141,7 @@ if "friends" in profile:
 
 output.write( json.dumps( task))
 output.close()
+syslog.syslog( syslog.LOG_INFO, "writing task %s" % filename  )
 
 print_headers()
 print "OK"
