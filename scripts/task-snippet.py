@@ -76,6 +76,9 @@ task= json.load( open( taskFilename, "rb"))
 
 # Load the snippet
 snippetFilename= os.path.join( dataPath, task["user"], "snippet", task[ "id"])
+if not os.path.exists( snippetFilename) or not os.access( snippetFilename, os.R_OK):
+    print "Unable to access snippet file", snippetFilename
+    sys.exit( 3)
 file= open( snippetFilename, "rb")
 snippet= json.load( file)
 file.close()
@@ -86,43 +89,45 @@ profileFilename= os.path.join( dataPath, task["user"], "profile.json")
 profile= json.load( open( profileFilename, "rb"))
 tags= snippet[ "tags"]
 
-# Update all tags
+# Update every tag feed
 for t in tags:
     tagDir= os.path.join( publicPath, "tags")
     # Build directory if it is missing
     if not os.path.exists( tagDir) or not os.path.isdir( tagDir):
         os.makedirs( tagDir)
     tagFilename= os.path.join( tagDir, ".".join( (t, "json")))
+    print "Updating feed for tag", t
 
     addSnippet( tagFilename, snippet, profile)
 
 # Update global snippets file
+print "Updating global feed of snippets"
 globalSnippetFilename= os.path.join( publicPath, "snippets.json")
 addSnippet( globalSnippetFilename, snippet, profile)
 
 # Update user snippets file
+print "Updating feed of user snippets"
 userSnippetFilename= os.path.join( publicPath, "users", task["user"], "snippets.json")
 addSnippet( userSnippetFilename, snippet, profile)
 
-#    if not os.access( tagFilename, os.F_OK) or not os.access( tagFilename, os.W_OK):
-#        print "tag file does not exists:", tagFilename
-#        file= open( tagFilename, "wb") 
-#        tagEntries=[]
-#    else:
-#        print "reading file", tagFilename
-#        file= open( tagFilename, "r+b")
-#        tagEntries= json.load( file)
-#        file.seek( 0)
-#        print ",".join( ("tagFilename:", tagFilename, "tagEntries:", str(tagEntries)))
-#    snippet[ "user"]= task[ "user"]
-#    if "site" in profile :
-#        snippet[ "site"]= profile[ "site"]
-#    if "avatar" in profile :
-#        snippet[ "avatar"]= profile[ "avatar"]
-#    if "email" in profile:
-#        snippet[ "gravatar"]= hashlib.md5( profile[ "email"]).hexdigest()
-#    tagEntries.insert( 0, snippet)
-#    # TODO: limit the size of the feeds
-#    print "tagEntries:" , tagEntries
-#    file.write( json.dumps( tagEntries))
-#    file.close()
+# Update tags
+print "Updating list of all tags"
+tagsFilename= os.path.join( publicPath, "tags.json")
+if not os.path.exists( tagsFilename):
+    tagList=[]
+else:
+    tagsFile= open( tagsFilename, "rb")
+    tagList= json.load( tagsFile)
+    tagsFile.close()
+
+# insert new tags
+tagList.extend( snippet[ "tags"])
+
+# Eliminate duplicates
+uniqTagList= list( set( tagList) )
+
+# Write the file
+tagsFile= open( tagsFilename, "wb")
+tagsFile.write( json.dumps( uniqTagList))
+tagsFile.close()
+
