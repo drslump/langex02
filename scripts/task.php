@@ -1,6 +1,9 @@
 #!/usr/bin/php -q
 <?php
 
+# Open connection with syslog
+openlog('langex-task', LOG_PID | LOG_PERROR, LOG_LOCAL0);
+
 // Load config
 $CONF = file_get_contents(__DIR__ . '/../conf/config.json');
 $CONF = json_decode($CONF);
@@ -19,6 +22,7 @@ $task = json_decode($task);
 
 // Perform the task
 $cmd = $CONF->paths->base . '/scripts/';
+chdir($cmd);
 switch ($task->action) {
     case 'status':
         $cmd .= 'task-status.php';
@@ -31,11 +35,13 @@ switch ($task->action) {
         break;
     default:
         fputs(STDERR, 'Non supported task action: ' . $task->action);
+        syslog(LOG_WARNING, 'Non supported task action: ' . $task->action);
         exit(1);
 }
 
 // Launch task process
-shell_exec($cmd . ' ' . escapeshellarg($taskfile));
+$out = shell_exec($cmd . ' ' . escapeshellarg($taskfile));
+syslog(LOG_INFO, 'Cmd: ' . $cmd . ' - TaskFile: ' . $taskfile . ' -- ' . $out);
 
 
 // Remove the task once it's completed
