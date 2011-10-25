@@ -48,5 +48,5 @@ syslog(LOG_INFO, 'Cmd: ' . $cmd . ' - TaskFile: ' . $taskfile . ' -- ' . $out);
 
 
 // Remove the task once it's completed
-//unlink($taskfile);
+unlink($taskfile);
 
