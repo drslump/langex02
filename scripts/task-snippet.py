@@ -132,60 +132,59 @@ tagsFile.write( json.dumps( uniqTagList))
 tagsFile.close()
 
 # Send an email to all the friends of an author
-if "email" in profile:
-    for friend in profile[ "friends"]:
-        # Read friend profile
-        friendProfileFilename= os.path.join( dataPath, friend, "profile.json")
-        friendProfileFile= open( friendProfileFilename, "rb")
-        friendProfile= json.load( friendProfileFile)
-        # Check if the email is available
-        if "email" in friendProfile:
-            import smtplib
+for friend in profile[ "friends"]:
+    # Read friend profile
+    friendProfileFilename= os.path.join( dataPath, friend, "profile.json")
+    friendProfileFile= open( friendProfileFilename, "rb")
+    friendProfile= json.load( friendProfileFile)
+    # Check if the email is available
+    if "email" in friendProfile:
+        import smtplib
 
-            from email.mime.multipart import MIMEMultipart
-            from email.mime.text import MIMEText
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.text import MIMEText
 
-            # me == my email address
-            # you == recipient's email address
-            me = "socialcoding@tid.es"
-            you = friendProfile[ "email"]
+        # me == my email address
+        # you == recipient's email address
+        me = "socialcoding@tid.es"
+        you = friendProfile[ "email"]
 
-            # Create message container - the correct MIME type is multipart/alternative.
-            msg = MIMEMultipart('alternative')
-            msg['Subject'] = '%s has uploaded a new snippet' % task[ "user"]
-            msg['From'] = me
-            msg['To'] = you
+        # Create message container - the correct MIME type is multipart/alternative.
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = '%s has uploaded a new snippet' % task[ "user"]
+        msg['From'] = me
+        msg['To'] = you
 
-            # Create the body of the message (a plain-text and an HTML version).
-            text = "Hi!\nThis is the snippet %s has uploaded\n\n%s" \
-                    % ( task["user"], snippet[ "code"] )
-            html = """\
-            <html>
-              <head></head>
-              <body>
-                <p>Hi!<br>
-                   This is the snippet %s has uploaded<br>
-                </p>
-                <pre>%s</pre>
-              </body>
-            </html>
-            """ % ( task["user"], snippet[ "code"] )
+        # Create the body of the message (a plain-text and an HTML version).
+        text = "Hi!\nThis is the snippet %s has uploaded\n\n%s" \
+                % ( task["user"], snippet[ "code"] )
+        html = """\
+        <html>
+          <head></head>
+          <body>
+            <p>Hi!<br>
+               This is the snippet %s has uploaded<br>
+            </p>
+            <pre>%s</pre>
+          </body>
+        </html>
+        """ % ( task["user"], snippet[ "code"] )
 
-            # Record the MIME types of both parts - text/plain and text/html.
-            part1 = MIMEText(text, 'plain')
-            part2 = MIMEText(html, 'html')
+        # Record the MIME types of both parts - text/plain and text/html.
+        part1 = MIMEText(text, 'plain')
+        part2 = MIMEText(html, 'html')
 
-            # Attach parts into message container.
-            # According to RFC 2046, the last part of a multipart message, in this case
-            # the HTML message, is best and preferred.
-            msg.attach(part1)
-            msg.attach(part2)
+        # Attach parts into message container.
+        # According to RFC 2046, the last part of a multipart message, in this case
+        # the HTML message, is best and preferred.
+        msg.attach(part1)
+        msg.attach(part2)
 
-            # Send the message via local SMTP server.
-            s = smtplib.SMTP('mailhost.hi.inet')
-            # sendmail function takes 3 arguments: sender's address, recipient's address
-            # and message to send - here it is sent as one string.
-            result= s.sendmail(me, you, msg.as_string())
-            print "Sending email to", you, "has this result:", result
-            s.quit()
+        # Send the message via local SMTP server.
+        s = smtplib.SMTP('mailhost.hi.inet')
+        # sendmail function takes 3 arguments: sender's address, recipient's address
+        # and message to send - here it is sent as one string.
+        result= s.sendmail(me, you, msg.as_string())
+        print "Sending email to", you, "has this result:", result
+        s.quit()
 
