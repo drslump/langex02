@@ -52,12 +52,42 @@ if (!is_dir($PATH)) {
 file_put_contents($PATH . '/' . $ID, json_encode($data));
 
 
-// Notify task manager
+// Notify task manager: new status
 $task = array(
     'action' => 'status',
     'user'   => $USER,
     'id'     => $ID
 );
-
 file_put_contents($CONF->paths->tasks . '/' . $ID . '.json', json_encode($task));
+
+// Notify task manager: send email to friends
+$filepath= $CONF->paths->data . '/' . $USER . '/' . 'profile.json';
+$profile= file_get_contents( $filepath);
+$profile = json_decode($profile);
+if (isset( $profile->friends)){
+    $task = array(
+        'action' => 'notify',
+        'user'   => $USER,
+        'id'     => $ID,
+        'friends'=> $profile->friends,
+        'message'=> array(
+            'subject' => $USER . ' has submitted a new status',
+            'text'    => "Hi!\nThis is the new status of ". $USER . "\n\n",
+            'html'    => <<<EOF
+                  <html>
+                  <head></head>
+                  <body>
+                    <p>Hi!<br>
+                       This is the new status of $USER<br>
+                    </p>
+                    <pre>${data['status']}</pre> 
+                  </body>                                             
+                </html>  
+EOF
+        )
+    );
+
+    file_put_contents($CONF->paths->tasks . '/notify-' . $ID . '.json', json_encode($task));
+
+}
 
