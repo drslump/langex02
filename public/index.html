@@ -61,6 +61,7 @@
 
                 $('#snippet textarea').focus();
 
+                $('#snippet button').unbind('click');
                 $('#snippet button').click(function(){
                     $.post('/cgi-bin/snippet.py', {
                         title: title,
