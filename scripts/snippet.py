@@ -4,6 +4,7 @@
 #   - Requires an user name (via Http server)
 #   - Input (POST)
 #     - code:string    -> The code of the snippet
+#     - title:string   -> Title of the snippet
 #     - language:string   -> If set this must be the language of the snippet
 #     - tags:string   -> If set this must be a comma-separated list of tags
 #        
@@ -11,6 +12,7 @@
 
 import json
 import datetime
+import time
 import cgitb
 import cgi
 import os
@@ -65,17 +67,19 @@ dt= datetime.datetime.utcnow().strftime( "%Y%m%d%H%M-")
 
 form = cgi.FieldStorage()
 
-if "code" not in form:
+if "code" not in form or "title" not in form:
 #if "code" not in form or "language" not in form:
     headers.append('Status: 400');
     print_headers()
     print "<H1>Error</H1>"
-    print "Please fill in the code fields."
+    print "Please fill in the code and the title fields."
     sys.exit()
 
-snippet={ "language": "", "author": "", "code": "", "tags": []}
+snippet={ "language": "", "author": "", "code": "", "title": "", "timestamp": "", "tags": []}
 snippet[ "author"]= user
+snippet[ "title"]= form["title"].value
 snippet[ "code"]= form["code"].value
+snippet[ "timestamp"]= int( time.mktime( datetime.datetime.utcnow().timetuple()))
 
 if "tags" in form:
     snippet[ "tags"]= form["tags"].value.split( ",")
