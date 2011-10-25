@@ -54,10 +54,10 @@ user= env["REMOTE_USER"]
 
 # Make sure the directory is available
 
-dataPath= os.path.join( dataPath, os.path.join( user, "snippet"))
-if not os.path.isdir( dataPath):
+snippetPath= os.path.join( dataPath, user, "snippet")
+if not os.path.isdir( snippetPath):
     # create the directory
-    os.makedirs( dataPath)
+    os.makedirs( snippetPath)
 
 #if not env[ "REQUEST_METHOD" ] == "POST":
 #    print "<H1>Error</H1>"
@@ -91,17 +91,47 @@ if "language" in form:
 
 #print "<br/>json dump", json.dumps( snippet)
 snippetUUID= "".join( (dt, str( uuid.uuid1()), ".json"))
-filename= os.path.join( dataPath, snippetUUID)
+filename= os.path.join( snippetPath, snippetUUID)
 #print "filename=", filename
 
 output= open( filename, "wb")
 output.write( json.dumps( snippet))
 output.close()
 
-# Create a task
+# Create a task for the snippet
 filename= os.path.join( tasksPath, snippetUUID)
 output= open( filename, "wb")
 task= { "action": "snippet", "user": user, "id": snippetUUID }
+output.write( json.dumps( task))
+output.close()
+
+# Create a task to notify friends
+profileFilename= os.path.join( dataPath, user, "profile.json")
+profile= json.load( open( profileFilename, "rb"))
+
+filename= os.path.join( tasksPath, "-".join( ('notify',snippetUUID)))
+output= open( filename, "wb")
+task= { "action": "notify", "user": user, "id": snippetUUID }
+
+if "friends" in profile:
+# in case the user has friends notify them
+   task["friends"]= profile["friends"]
+   task["message"]= { \
+       'subject': '%s has uploaded a new snippet' % user, \
+       'text':    "Hi!\nThis is the snippet %s has uploaded\n\n%s", \
+       'html':    """\
+            <html>
+              <head></head>
+              <body>
+                <p>Hi!<br>
+                   This is the snippet %s has uploaded<br>
+                </p>
+                <pre>%s</pre>                                     
+              </body>                                             
+            </html>                                               
+            """ % ( user, snippet[ "code"] )\
+        }
+
 output.write( json.dumps( task))
 output.close()
 

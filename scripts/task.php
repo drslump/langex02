@@ -24,6 +24,8 @@ $task = json_decode($task);
 $cmd = $CONF->paths->base . '/scripts/';
 chdir($cmd);
 switch ($task->action) {
+    case 'notify':
+        $cmd .= 'task-notify.py';
     case 'status':
         $cmd .= 'task-status.php';
         break;
