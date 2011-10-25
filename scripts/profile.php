@@ -29,6 +29,8 @@ if (file_exists($PATH . '/profile.json')) {
 // If we only want to fetch it return it
 if (empty($_POST)) {
     header('Content-type: application/json');
+    // Inject username
+    $data['user'] = $USER;
     echo json_encode($data);
     exit;
 }
