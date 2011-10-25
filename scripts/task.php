@@ -26,6 +26,7 @@ chdir($cmd);
 switch ($task->action) {
     case 'notify':
         $cmd .= 'task-notify.py';
+        break;
     case 'status':
         $cmd .= 'task-status.php';
         break;
