@@ -51,8 +51,25 @@
                     return;
                 }
 
+                var me = this;
+                this.pause();
+
                 $('#snippet').show();
-                $('#snippet-code').focus();
+                $('#snippet textarea').val('');
+                $('#snippet input').val('');
+
+                $('#snippet textarea').focus();
+
+                $('#snippet button').click(function(){
+                    $.post('/cgi-bin/snippet.py', {
+                        title: title,
+                        code: $('#snippet textarea').val(),
+                        tags: $('#snippet input').val()
+                    }, function(){
+                        $('#snippet').hide();
+                        me.resume();
+                    });
+                });
             },
 
             profile: function(){
