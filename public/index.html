@@ -3,10 +3,10 @@
 <head>
   <title>LangExp02</title>
 
-  <script type="text/javascript" src="http://code.jquery.com/jquery-1.6.4.min.js"></script>
+  <script type="text/javascript" src="/assets/jquery-1.6.4.min.js"></script>
 
-  <script src="http://terminal.jcubic.pl/js/jquery.terminal-0.4.3.min.js"></script>
-  <link type="text/css" rel="stylesheet" href="http://terminal.jcubic.pl/css/jquery.terminal.css" />
+  <script src="/assets/jquery.terminal-0.4.3.min.js"></script>
+  <link type="text/css" rel="stylesheet" href="/assets/jquery.terminal.css" />
 
   <link type="text/css" rel="stylesheet" href="/main.css" />
 
@@ -18,6 +18,16 @@
             cachedData = [];
 
 
+        function fmtItm(itm, prop){
+            var d = new Date((itm.timestamp || 0) * 1000);
+            var out = [];
+            out.push('[[u;;]' + itm.user + ']');
+            out.push(d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate() + ' ' + d.getHours() + ':' + d.getMinutes());
+            out.push(itm[prop]);
+            return out.join(' ');
+        }
+
+
         $('#term').terminal({
             help: function(){
                 this.echo('LangEx#02 terminal help');
@@ -27,7 +37,54 @@
                 this.echo('  cat [[i;;]entry] - Show the contents of the given entry');
                 this.echo('  follow [[i;;]username]   - Follow the given username');
                 this.echo('  unfollow [[i;;]username] - Unfollow the given username');
+                this.echo('  profile - Show profile information');
+                this.echo('  set [[i;;]property] [[i;;]value] - Set a profile value (email, avatar, site)');
             },
+
+            snippet: function(/*title*/){
+                var title = [];
+                for (var i=0; i<arguments.length; i++) title.push(arguments[i]);
+                title = title.join(' ');
+
+                if (!title) {
+                    this.error('Please provide a title for the snippet as argument');
+                    return;
+                }
+
+                $('#snippet').show();
+                $('#snippet-code').focus();
+            },
+
+            profile: function(){
+                var me = this;
+                for (var k in profile) if (profile.hasOwnProperty(k)) {
+                    me.echo('[[b;;]' + k + ']: ' + profile[k]);
+                }
+            },
+
+            set: function(prop, value){
+                if (!prop || !value) {
+                    this.error('Property name and value required. See help for more info' );
+                    return;
+                }
+
+                if (-1 === ['email','avatar','site'].indexOf(prop)) {
+                    this.error('Property not supported!');
+                    return;
+                }
+
+                this.pause();
+
+                var me = this,
+                    data = {};
+
+                data[prop] = value;
+                $.post('/cgi-bin/profile.php', data, function(){
+                    profile[prop] = value;
+                    me.resume();
+                });
+            },
+
             ls: function(){
                 var me = this;
                 switch (cwd) {
@@ -36,16 +93,57 @@
                     $.ajax('/snippets.json', {
                         dataType: 'json',
                         success: function(data){
+                            me.resume();
                             cachedData = data;
                             data.forEach(function(itm){
-                                var d = new Date((itm.timestamp || 0) * 1000);
-                                var out = [];
-                                out.push('[[u;;]' + itm.user + ']');
-                                out.push(d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate() + ' ' + d.getHours() + ':' + d.getMinutes());
-                                out.push(itm.title);
-                                me.echo(out.join(' '));
+                                me.echo( fmtItm(itm, 'title') );
                             });
+                        }
+                    });
+                break;
+                case '/tags':
+                    this.error('Not implemented :(');
+                break;
+                case '/messages':
+                    this.pause();
+                    $.ajax('/wall.json', {
+                        dataType: 'json',
+                        success: function(data){
                             me.resume();
+                            cachedData = data;
+                            data.forEach(function(itm){
+                                me.echo( fmtItm(itm, 'status') );
+                            });
+                        }
+                    });
+                break;
+                case '/home':
+                    this.echo('snippets');
+                    this.echo('messages');
+                break;
+                case '/home/snippets':
+                    this.pause();
+                    $.ajax('/users/' + profile.user + '/snippets.json', {
+                        dataType: 'json',
+                        success: function(data){
+                            me.resume();
+                            cachedData = data;
+                            data.forEach(function(itm){
+                                me.echo( fmtItm(itm, 'title') );
+                            });
+                        }
+                    });
+                break;
+                case '/home/messages':
+                    this.pause();
+                    $.ajax('/users/' + profile.user + '/wall-' + profile.token + '.json', {
+                        dataType: 'json',
+                        success: function(data){
+                            me.resume();
+                            cachedData = data;
+                            data.forEach(function(itm){
+                                me.echo( fmtItm(itm, 'status') );
+                            });
                         }
                     });
                 break;
@@ -57,19 +155,27 @@
                     this.echo('home');
                 }
             },
+
             cd: function(dir){
-                if (-1 === ['..','tags','snippets','messages','home'].indexOf(dir)) {
-                    this.error('Invalid directory');
-                    return;
-                }
+                if (dir) {
+                    if (-1 === ['..','tags','snippets','messages','home'].indexOf(dir)) {
+                        this.error('Invalid directory');
+                        return;
+                    }
 
-                if (dir === '..') {
-                    cwd = '/';
+                    if (dir === '..') {
+                        cwd = cwd.split('/');
+                        cwd.pop();
+                        cwd = cwd.join('/') || '/';
+                    } else {
+                        cwd = cwd.replace(/\/$/, '');
+                        cwd += '/' + dir;
+                    }
                 } else {
-                    cwd = '/' + dir;
+                    cwd = '/home';
                 }
 
-                this.set_prompt( cwd + ' >' );
+                this.set_prompt( '[[b;#0ff;]' + (cwd === '/home' ? '~' : cwd) + '] [[b;#0f0;]>]' );
             },
 
             cat: function(/*entry*/){
@@ -80,19 +186,16 @@
                 }
                 entry = entry.join(' ');
 
-                switch (cwd) {
-                case '/snippets':
-                    var found = false;
-                    cachedData.forEach(function(itm){
-                        if (itm.title === entry) {
-                            me.echo(itm.code);
-                            found = true;
-                        }
-                    });
-                    if (!found) {
-                        me.error('Snippet not found');
+                var found = false;
+                cachedData.forEach(function(itm){
+                    if (itm.title === entry) {
+                        me.echo(itm.code);
+                        found = true;
                     }
-                break;
+                });
+
+                if (!found) {
+                    this.error('Snippet not found')
                 }
             },
 
@@ -141,7 +244,7 @@
             }
         }, {
             tabcompletion: true,
-            prompt: '/ >',
+            prompt: '[[b;#0ff;]/] [[b;#0f0;]>]',
             name: 'langex',
             greetings: "Welcome to LangEx#02!",
             login: function(username, password, cb){
@@ -177,7 +280,22 @@
 
 </head>
 <body>
-  <div id="term">
+  <div id="term"></div>
+  <div id="snippet">
+    <div class="box-header">New Snippet!</div>
+    <div class="box-body">
+        <div>
+            <textarea rows="10"></textarea>
+        </div>
+        <div>
+            <label>Tags</label>
+            <input type="text" value="" />
+        </div>
+        <div>
+            <button>save</button>
+        </div>
+    </div>
+    <div class="box-footer">&nbsp;</div>
   </div>
 </body>
 </html>
